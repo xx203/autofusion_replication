@@ -1,0 +1,14 @@
+# 基础配置示例 (我们会逐步完善)
+simulation:
+  num_uavs: 3
+  # 可以在这里添加模拟的数据路径等
+
+vgmn:
+  model_path: "path/to/your/trained/vgmn_model.pth" # 暂时写个假的路径
+  feature_dim: 256 # 示例：特征维度
+  tile_level: 18   # 论文中提到的地图瓦片层级
+
+map_fusion:
+  voxel_size: 0.1 # 体素滤波的栅格大小 (单位：米)
+
+# 其他参数可以后续添加...
