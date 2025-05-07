@@ -1,6 +1,7 @@
 import time
 import yaml
 import os
+import numpy as np
 from uav_agent.agent import UAVAgent
 from ground_server.server import GroundServer # <--- 导入 GroundServer 类
 
@@ -62,20 +63,62 @@ def run_simulation_with_server(config, duration_seconds=10): # <--- 修改函数
          print(f"  Agent {i}: Frames processed={frame_counts[i]}, Keyframes generated={agent.local_slam.keyframe_count}")
 
     # 在这里可以访问 Server 存储的数据 (虽然现在 Server 还没处理)
-    print("\n--- Server Keyframe Log Summary ---")
-    total_kfs_in_server = 0
-    if server.agent_keyframes: # 检查字典是否为空
-         print(f"Total agents registered in server: {len(server.agent_keyframes)}")
-         for agent_id, kfs in server.agent_keyframes.items():
-             num_kfs = len(kfs)
-             total_kfs_in_server += num_kfs
-             print(f"  Agent {agent_id} sent {num_kfs} keyframes (logged by server).")
-         print(f"Total keyframes logged by server: {total_kfs_in_server}")
+# --- 修改打印 VGMN 结果摘要 --- VVVV
+    print("\n--- Server VGMN Results Summary ---")
+    total_vgmn_results_count = 0 # 重命名变量以区分
+    if server.vgmn_results:
+        print(f"Total agents with VGMN results: {len(server.vgmn_results)}")
+        for agent_id, agent_vgmn_data in server.vgmn_results.items(): # 重命名变量
+            num_results_for_agent = len(agent_vgmn_data)
+            total_vgmn_results_count += num_results_for_agent
+
+            first_kf_id_processed = None
+            first_result_details = "No results to show."
+
+            if num_results_for_agent > 0:
+                # 获取这个 agent 的第一个被处理的关键帧 ID
+                first_kf_id_processed = list(agent_vgmn_data.keys())[0]
+                if first_kf_id_processed in agent_vgmn_data:
+                    result_entry = agent_vgmn_data[first_kf_id_processed]
+                    geo_pred = result_entry.get('geo_prediction_index', 'N/A')
+                    # 确保 features 是 numpy array 才调用 .shape
+                    features_data = result_entry.get('features')
+                    feat_shape = features_data.shape if isinstance(features_data, np.ndarray) else 'N/A'
+                    first_result_details = f"KF {first_kf_id_processed} -> GeoPred: {geo_pred}, FeatShape: {feat_shape}"
+
+            print(f"  Agent {agent_id} has {num_results_for_agent} VGMN results. (e.g., {first_result_details})")
+        print(f"Total VGMN results processed by server: {total_vgmn_results_count}")
     else:
-         print("No keyframes were logged by the server.")
-    print(f"Total agents registered in server: {len(server.agent_keyframes)}")
-    # for agent_id, kfs in server.agent_keyframes.items(): # <--- Server 现在还没存储数据
-    #     print(f"  Agent {agent_id} sent {len(kfs)} keyframes (according to server log).")
+        print("No VGMN results were processed by the server.")
+    # --- 修改结束 ---
+
+    # ... ("== Simulation Completed ==" 保持不变) ...
+
+
+    # --- 新增打印 VGMN 结果摘要 --- VVVV
+    print("\n--- Server VGMN Results Summary ---")
+    total_vgmn_results = 0
+    if server.vgmn_results:
+        print(f"Total agents with VGMN results: {len(server.vgmn_results)}")
+        for agent_id, results in server.vgmn_results.items():
+            num_results = len(results)
+            total_vgmn_results += num_results
+            # 只打印第一个结果的摘要作为示例
+            first_kf_id = list(results.keys())[0] if num_results > 0 else None
+            first_result_summary = "N/A"
+            if first_kf_id:
+                first_geo_pred = results[first_kf_id].get('geo_prediction_index', 'N/A')
+                first_feat_shape = results[first_kf_id].get('features', np.array([])).shape
+                first_result_summary = f"KF {first_kf_id} -> GeoPred: {first_geo_pred}, FeatShape: {first_feat_shape}"
+
+            print(f"  Agent {agent_id} has {num_results} VGMN results. (e.g., {first_result_summary})")
+        print(f"Total VGMN results processed by server: {total_vgmn_results}")
+    else:
+        print("No VGMN results were processed by the server.")
+    # --- 新增结束 ---
+
+
+# ... (脚本结束的打印信息 "== Simulation Completed ==" 保持不变) ...
 
 
 # --- 脚本主入口 ---
